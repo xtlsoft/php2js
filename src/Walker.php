@@ -13,11 +13,11 @@ class Walker extends NodeVisitorAbstract {
     public function enterNode(Node $node) {
         $append = function ($a) {$this->generated .= $a;};
         if ($node instanceof Stmt\InlineHTML) {
-            $append("console.log(" . var_export($node->value, 1) . ");\r\n");
+            $append("console.log(" . str_replace("\n", "\\n", var_export($node->value, 1)) . ");\r\n");
         } else if ($node instanceof Stmt\Echo_) {
             $append("console.log(");
         } else if ($node instanceof Scalar\LNumber || $node instanceof Scalar\DNumber || $node instanceof Scalar\String_) {
-            $append(var_export($node->value, 1));
+            $append(str_replace("\n", "\\n", var_export($node->value, 1)));
         } else if ($node instanceof Stmt\Function_) {
             $args = "";
             $c = new self;
