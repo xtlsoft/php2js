@@ -3,10 +3,24 @@
 namespace ToJavascript;
 
 class Compiler {
-    public static function compile(string $code): string {
+    public static $rules = [
+        Rules\Print_::class,
+        Rules\Scalars::class,
+        Rules\ControlFlow::class,
+        Rules\Function_::class,
+    ];
+    public static function compile($code, array $configure = []): string {
         $walker = new Walker;
-        $parser = (new \PhpParser\ParserFactory)->create(\PhpParser\ParserFactory::PREFER_PHP7);
-        $asts = $parser->parse($code);
+        foreach (self::$rules as $rule) {
+            $walker->register($rule);
+        }
+        $walker->configure = array_merge($walker->configure, $configure);
+        if (is_string($code)) {
+            $parser = (new \PhpParser\ParserFactory)->create(\PhpParser\ParserFactory::PREFER_PHP7);
+            $asts = $parser->parse($code);
+        } else {
+            $asts = [$code];
+        }
         // echo (new \PhpParser\NodeDumper)->dump($asts), PHP_EOL;
         $traverser = new \PhpParser\NodeTraverser;
         $traverser->addVisitor($walker);

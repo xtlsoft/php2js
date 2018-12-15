@@ -8,74 +8,54 @@ use PhpParser\Node\{Stmt, Scalar, Name, Expr};
 class Walker extends NodeVisitorAbstract {
 
     public $generated = "";
-    public $copyright = true;
+    public $configure = [
+        "printFunction" => "console.log",
+        "endline" => "\r\n",
+        "tab" => "    ",
+        "copyright" => true,
+    ];
+    protected $currentTab = "";
+
+    public $rules = [];
+
+    public function register(string $className) {
+        $this->rules = array_merge($this->rules, Tool::generateRule($className));
+        return $this;
+    }
 
     public function enterNode(Node $node) {
-        $append = function ($a) {$this->generated .= $a;};
-        if ($node instanceof Stmt\InlineHTML) {
-            $append("console.log(" . str_replace("\n", "\\n", var_export($node->value, 1)) . ");\r\n");
-        } else if ($node instanceof Stmt\Echo_) {
-            $append("console.log(");
-        } else if ($node instanceof Scalar\LNumber || $node instanceof Scalar\DNumber || $node instanceof Scalar\String_) {
-            $append(str_replace("\n", "\\n", var_export($node->value, 1)));
-        } else if ($node instanceof Stmt\Function_) {
-            $args = "";
-            $c = new self;
-            $c->copyright = false;
-            $traverser = new \PhpParser\NodeTraverser;
-            $traverser->addVisitor($c);
-            $args = "";
-            $first = 1;
-            foreach ($node->params as &$arg) {
-                if (!$first) $args .= ", ";
-                else $first = 0;
-                $traverser->traverse([$arg]);
-                $args .= $c->generated;
-                $arg = null;
-            }
-            $append("function {$node->name->name}($args) {\r\n");
-        } else if ($node instanceof Stmt\Return_) {
-            $append("return ");
-        } else if ($node instanceof Expr\FuncCall) {
-            $c = new self;
-            $c->copyright = false;
-            $traverser = new \PhpParser\NodeTraverser;
-            $traverser->addVisitor($c);
-            $args = "";
-            $first = 1;
-            foreach ($node->args as &$arg) {
-                if (!$first) $args .= ", ";
-                else $first = 0;
-                $traverser->traverse([$arg]);
-                $args .= $c->generated;
-                $arg = null;
-            }
-            $append("{$node->name->parts[0]}($args)");
-        } else if ($node instanceof Expr\Variable) {
-            $append("{$node->name}");
-        }
+        $f = Tool::doRule($this, $node)[0];
+        $this->generated .= $f();
     }
 
     public function leaveNode(Node $node) {
-        $append = function ($a) {$this->generated .= $a;};
-        if ($node instanceof Stmt\Echo_) {
-            $append(");\r\n");
-        } else if ($node instanceof Stmt\Function_) {
-            $append("}\r\n");
-        } else if ($node instanceof Stmt\Return_) {
-            $append(";\r\n");
-        } else if ($node instanceof Stmt\Expression) {
-            $append(";\r\n");
-        }
+        $f = Tool::doRule($this, $node)[1];
+        $this->generated .= $f();
     }
 
     public function afterTraverse(array $nodes) {
-        if ($this->copyright)
+        if ($this->configure['copyright'])
             $this->generated .= "\r\n/** EOF **/";
     }
 
+    public function endline(bool $reduceTab = false) {
+        if ($reduceTab) $this->reduceTab();
+        return $this->configure['endline'] . $this->currentTab;
+    }
+
+    public function reduceTab() {
+        $this->currentTab = substr($this->currentTab, 0, strlen($this->currentTab) - strlen($this->configure['tab']));
+        $this->generated = substr($this->generated, 0, strlen($this->generated) - strlen($this->configure['tab']));
+        return $this;
+    }
+
+    public function increaseTab() {
+        $this->currentTab .= $this->configure['tab'];
+        return $this;
+    }
+
     public function beforeTraverse(array $nodes) {
-        if ($this->copyright)
+        if ($this->configure['copyright'])
             $this->generated = <<<EOF
 /**
  * Compiled by js2php.

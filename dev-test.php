@@ -11,10 +11,16 @@ echo $c->compile('
 
 function abc($a, $b) {
     echo 123;
-    return $b;
+    return bcd($b, $a);
 }
 
-echo abc(123, 321);
+function bcd($b, $a) {
+    echo $a;
+    echo $b;
+    return $a;
+}
+
+echo abc(123, 32231);
 ?>
 </body>
 ');
