@@ -1,0 +1,35 @@
+#!/usr/bin/php
+<?php
+
+defined('VendorDir') or define('VendorDir', dirname(__DIR__) . '/vendor');
+
+require_once(VendorDir . '/autoload.php');
+
+if ($argc < 2) {
+    echo <<<EOF
+USAGE   php2js [InputFile] [OutputFile]
+
+DESCRIPTION
+    php2js is a program to compile php code into javascript.
+
+ARGUMENTS
+    InputFile   The name of php file.           example.php
+    OutputFile  The name of javascript file.    example.js (or php://stdout)
+
+EOF;
+    exit(0);
+}
+
+$code = @file_get_contents($argv[1]);
+if (!$code) {
+    file_put_contents("php://stderr", "Error: invalid input file.\r\n");
+    exit(-1);
+}
+
+if (!@$argv[2]) {
+    $argv[2] = "php://stdout";
+}
+
+$rslt = \ToJavascript\Compiler::compile($code);
+
+file_put_contents($argv[2], $rslt);

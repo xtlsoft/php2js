@@ -15,12 +15,13 @@ class Function_ {
         }
         return [
             function () use ($node, $args) {
+                $e = $this->walker->endline();
                 $this->walker->increaseTab();
-                return "function {$node->name->name}($args){" . $this->walker->endline();
+                return "{$e}function {$node->name->name}($args){" . $this->walker->endline();
             },
             function () {
                 $this->walker->reduceTab();
-                return "}" . $this->walker->endline();
+                return "}" . $this->walker->endline() . $this->walker->endline();
             }
         ];
     }
@@ -34,7 +35,7 @@ class Function_ {
             $args .= \ToJavascript\Compiler::compile($arg, ["copyright" => false]);
             $arg = null;
         }
-        $name = join("_", $node->name->parts);
+        $name = join(".", $node->name->parts);
         return ["{$name}($args)", ""];
     }
 

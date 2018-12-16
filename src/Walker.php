@@ -15,8 +15,13 @@ class Walker extends NodeVisitorAbstract {
         "copyright" => true,
     ];
     protected $currentTab = "";
+    protected $stack = null;
 
     public $rules = [];
+
+    public function __construct() {
+        $this->stack = new \SplStack();
+    }
 
     public function register(string $className) {
         $this->rules = array_merge($this->rules, Tool::generateRule($className));
@@ -24,12 +29,14 @@ class Walker extends NodeVisitorAbstract {
     }
 
     public function enterNode(Node $node) {
-        $f = Tool::doRule($this, $node)[0];
+        $r = Tool::doRule($this, $node);
+        $f = $r[0];
+        $this->stack->push($r[1]);
         $this->generated .= $f();
     }
 
     public function leaveNode(Node $node) {
-        $f = Tool::doRule($this, $node)[1];
+        $f = $this->stack->pop();
         $this->generated .= $f();
     }
 
@@ -62,6 +69,7 @@ class Walker extends NodeVisitorAbstract {
  * js2php is written by xtlsoft.
  * 
  */
+
 
 EOF;
         else $this->generated = "";

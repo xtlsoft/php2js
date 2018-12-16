@@ -8,6 +8,7 @@ class Compiler {
         Rules\Scalars::class,
         Rules\ControlFlow::class,
         Rules\Function_::class,
+        Rules\Operators::class,
     ];
     public static function compile($code, array $configure = []): string {
         $walker = new Walker;
@@ -18,10 +19,10 @@ class Compiler {
         if (is_string($code)) {
             $parser = (new \PhpParser\ParserFactory)->create(\PhpParser\ParserFactory::PREFER_PHP7);
             $asts = $parser->parse($code);
+            // echo (new \PhpParser\NodeDumper)->dump($asts), PHP_EOL;
         } else {
             $asts = [$code];
         }
-        // echo (new \PhpParser\NodeDumper)->dump($asts), PHP_EOL;
         $traverser = new \PhpParser\NodeTraverser;
         $traverser->addVisitor($walker);
         $traverser->traverse($asts);
